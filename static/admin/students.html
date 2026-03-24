@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Students — Codex Test Admin</title>
+    <link rel="stylesheet" href="/static/css/global.css">
+    <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+
+<body>
+    <div id="toast-container"></div>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-text">CODEX TEST</div>
+                <div class="sidebar-role">Master Admin</div>
+            </div>
+            <nav class="sidebar-nav">
+                <a class="nav-item" href="/admin/dashboard"><span class="nav-icon">📊</span> Overview</a>
+                <a class="nav-item" href="/admin/dashboard"><span class="nav-icon">📝</span> Problems</a>
+                <a class="nav-item" href="/admin/create-test"><span class="nav-icon">⏱️</span> Tests</a>
+                <a class="nav-item active" href="/admin/students"><span class="nav-icon">👥</span> Students</a>
+                <a class="nav-item" href="/admin/dashboard"><span class="nav-icon">📤</span> Submissions</a>
+                <a class="nav-item" href="/admin/dashboard"><span class="nav-icon">🛡️</span> Activity Logs</a>
+                <a class="nav-item" href="/admin/dashboard"><span class="nav-icon">📈</span> Analytics</a>
+            </nav>
+            <div class="sidebar-bottom">
+                <button class="nav-item" onclick="logout()"><span class="nav-icon">🚪</span> Logout</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header"
+                style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+                <div>
+                    <h1 class="page-title">STUDENTS</h1>
+                    <p class="page-sub" id="student-count">Loading…</p>
+                </div>
+                <div style="display:flex;gap:10px;">
+                    <input type="text" id="search-box" class="form-control" placeholder="🔍 Search by name or email…"
+                        style="width:240px;" oninput="filterStudents(this.value)">
+                </div>
+            </div>
+
+            <div class="glass-card" style="padding:24px;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Joined</th>
+                            <th>Submissions</th>
+                            <th>Violations</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="students-tbody">
+                        <tr>
+                            <td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">Loading
+                                students…</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Activity log panel -->
+            <div style="margin-top:28px;">
+                <h3 style="font-family:var(--font-display);font-size:.9rem;letter-spacing:.1em;margin-bottom:16px;">
+                    RECENT ANTI-CHEAT EVENTS</h3>
+                <div class="glass-card" style="padding:24px;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Student ID</th>
+                                <th>Event</th>
+                                <th>Details</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logs-tbody">
+                            <tr>
+                                <td colspan="4" style="text-align:center;padding:32px;color:var(--text-muted);">Loading…
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script>
+        requireAuth('master');
+        let allStudents = [];
+        let studentSubCounts = {};
+        let studentViolCounts = {};
+
+        (async () => {
+            try {
+                const [students, subs, logs] = await Promise.all([
+                    API.get('/api/admin/students'),
+                    API.get('/api/submissions/'),
+                    API.get('/api/admin/activity-logs')
+                ]);
+                allStudents = students;
+
+                // Build submission counts
+                subs.forEach(s => { studentSubCounts[s.studentId] = (studentSubCounts[s.studentId] || 0) + 1; });
+
+                // Build violation counts
+                const badEvents = ['tab_switch', 'fullscreen_exit', 'copy_attempt', 'devtools', 'auto_submit'];
+                logs.forEach(l => {
+                    if (badEvents.includes(l.eventType))
+                        studentViolCounts[l.studentId] = (studentViolCounts[l.studentId] || 0) + 1;
+                });
+
+                document.getElementById('student-count').textContent = `${students.length} student${students.length !== 1 ? 's' : ''} registered`;
+                renderStudents(students);
+
+                // Render logs
+                const logsBody = document.getElementById('logs-tbody');
+                const colorMap = { tab_switch: 'badge-warn', devtools: 'badge-danger', auto_submit: 'badge-danger', disqualified: 'badge-danger', fullscreen_exit: 'badge-warn', copy_attempt: 'badge-warn' };
+                const recentLogs = logs.slice(0, 50);
+                logsBody.innerHTML = recentLogs.length
+                    ? recentLogs.map(l => `
+            <tr>
+              <td style="font-size:.75rem;font-family:var(--font-code);">${l.studentId.slice(-10)}</td>
+              <td><span class="badge ${colorMap[l.eventType] || 'badge-info'}">${l.eventType}</span></td>
+              <td style="font-size:.75rem;color:var(--text-muted);">${JSON.stringify(l.details)}</td>
+              <td style="font-size:.75rem;color:var(--text-muted);">${l.timestamp ? new Date(l.timestamp).toLocaleString() : '—'}</td>
+            </tr>`).join('')
+                    : '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-muted);">No events logged</td></tr>';
+            } catch (e) { showToast(e.message, 'error'); }
+        })();
+
+        function renderStudents(students) {
+            const tbody = document.getElementById('students-tbody');
+            if (!students.length) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted);">No students registered yet</td></tr>';
+                return;
+            }
+            tbody.innerHTML = students.map(s => `
+        <tr>
+          <td><strong>${s.name}</strong></td>
+          <td style="font-size:.82rem;">${s.email}</td>
+          <td><span class="badge ${s.status === 'active' ? 'badge-success' : 'badge-danger'}">${s.status}</span></td>
+          <td style="font-size:.75rem;color:var(--text-muted);">${s.createdAt ? new Date(s.createdAt).toLocaleDateString() : '—'}</td>
+          <td style="text-align:center;">${studentSubCounts[s.id] || 0}</td>
+          <td style="text-align:center;">
+            <span style="color:${(studentViolCounts[s.id] || 0) > 0 ? '#f59e0b' : 'var(--neon-green)'};">
+              ${studentViolCounts[s.id] || 0}
+            </span>
+          </td>
+          <td>
+            ${s.status === 'active'
+                    ? `<button class="btn btn-danger btn-sm" onclick="disqualify('${s.id}','${s.name}')">⛔ Disqualify</button>`
+                    : `<span style="color:#ef4444;font-size:.78rem;font-weight:600;">DISQUALIFIED</span>`}
+          </td>
+        </tr>`).join('');
+        }
+
+        function filterStudents(query) {
+            const q = query.toLowerCase();
+            const filtered = allStudents.filter(s =>
+                s.name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q)
+            );
+            renderStudents(filtered);
+        }
+
+        async function disqualify(id, name) {
+            if (!confirm(`Disqualify student "${name}"? They will be locked out.`)) return;
+            try {
+                await API.post(`/api/admin/students/${id}/disqualify`, {});
+                showToast(`${name} disqualified`, 'warn');
+                const s = allStudents.find(x => x.id === id);
+                if (s) s.status = 'disqualified';
+                renderStudents(allStudents);
+            } catch (e) { showToast(e.message, 'error'); }
+        }
+    </script>
+</body>
+
+</html>

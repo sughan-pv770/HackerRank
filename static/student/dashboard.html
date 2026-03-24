@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard — Codex Test</title>
+    <link rel="stylesheet" href="/static/css/global.css">
+    <link rel="stylesheet" href="/static/css/student.css">
+</head>
+
+<body>
+    <div class="bg-canvas" style="position:fixed;inset:0;z-index:0;background:var(--bg-void);"></div>
+    <div class="grid-overlay"
+        style="position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);background-size:60px 60px;">
+    </div>
+    <div id="toast-container"></div>
+
+    <nav class="topbar">
+        <a class="topbar-brand" href="/">CODEX TEST</a>
+        <div class="topbar-nav">
+            <span id="nav-username" style="font-size:.82rem;color:var(--text-secondary);"></span>
+            <button class="btn btn-outline btn-sm" onclick="logout()">Logout</button>
+        </div>
+    </nav>
+
+    <div class="student-layout">
+        <div class="student-container">
+
+            <div class="student-welcome glass-card">
+                <h2>Welcome back, <span id="student-name" style="color:var(--neon-cyan);">Student</span> 👋</h2>
+                <p>Ready to master code? Select a test below to begin.</p>
+                <div class="grid-3" style="margin-top:20px;" id="student-stats">
+                    <div class="glass-card stat-card" style="padding:16px;">
+                        <div class="stat-value" id="st-total" style="font-size:1.6rem;">—</div>
+                        <div class="stat-label">Submissions</div>
+                    </div>
+                    <div class="glass-card stat-card" style="padding:16px;">
+                        <div class="stat-value" id="st-passed" style="font-size:1.6rem;color:var(--neon-green);">—</div>
+                        <div class="stat-label">Passed</div>
+                    </div>
+                    <div class="glass-card stat-card" style="padding:16px;">
+                        <div class="stat-value" id="st-violations" style="font-size:1.6rem;color:#f59e0b;">—</div>
+                        <div class="stat-label">Violations</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+                <h3 style="font-family:var(--font-display);font-size:1rem;letter-spacing:.08em;">AVAILABLE TESTS</h3>
+            </div>
+
+            <div class="test-cards" id="test-cards">
+                <div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted);">Loading tests…
+                </div>
+            </div>
+
+            <div style="margin:32px 0 16px;display:flex;justify-content:space-between;align-items:center;">
+                <h3 style="font-family:var(--font-display);font-size:1rem;letter-spacing:.08em;">MY SUBMISSIONS</h3>
+            </div>
+
+            <div class="glass-card" style="padding:24px;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Language</th>
+                            <th>Result</th>
+                            <th>Score</th>
+                            <th>Time (s)</th>
+                            <th>Submitted</th>
+                        </tr>
+                    </thead>
+                    <tbody id="my-submissions">
+                        <tr>
+                            <td colspan="5" style="color:var(--text-muted);text-align:center;padding:24px;">No
+                                submissions yet</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/student-dashboard.js"></script>
+</body>
+
+</html>

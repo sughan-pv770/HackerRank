@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: terv-test
+    env: docker
+    plan: free # Change if you want a paid tier
+    envVars:
+      - key: MONGO_URI
+        sync: false # Set this securely in the Render Dashboard
+      - key: JWT_SECRET_KEY
+        generateValue: true # Render will automatically generate a strong secret
+      - key: SECRET_KEY
+        generateValue: true # Render will automatically generate a strong secret
+      - key: FLASK_DEBUG
+        value: "false"

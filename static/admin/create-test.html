@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Test — Codex Test Admin</title>
+    <link rel="stylesheet" href="/static/css/global.css">
+    <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+
+<body>
+    <div id="toast-container"></div>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <div class="sidebar-logo-text">CODEX TEST</div>
+                <div class="sidebar-role">Master Admin</div>
+            </div>
+            <nav class="sidebar-nav">
+                <a class="nav-item" href="/admin/dashboard">
+                    <span class="nav-icon">📊</span> Overview
+                </a>
+                <a class="nav-item" href="/admin/dashboard#problems"
+                    onclick="sessionStorage.setItem('adminSection','problems')">
+                    <span class="nav-icon">📝</span> Problems
+                </a>
+                <a class="nav-item active" href="/admin/create-test">
+                    <span class="nav-icon">⏱️</span> Create Test
+                </a>
+                <a class="nav-item" href="/admin/students">
+                    <span class="nav-icon">👥</span> Students
+                </a>
+                <a class="nav-item" href="/admin/dashboard">
+                    <span class="nav-icon">📤</span> Submissions
+                </a>
+                <a class="nav-item" href="/admin/dashboard">
+                    <span class="nav-icon">🛡️</span> Activity Logs
+                </a>
+                <a class="nav-item" href="/admin/dashboard">
+                    <span class="nav-icon">📈</span> Analytics
+                </a>
+            </nav>
+            <div class="sidebar-bottom">
+                <button class="nav-item" onclick="logout()"><span class="nav-icon">🚪</span> Logout</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="page-header">
+                <h1 class="page-title">CREATE TEST</h1>
+                <p class="page-sub">Build a new coding test and assign problems</p>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+                <!-- Test Details -->
+                <div class="glass-card" style="padding:28px;">
+                    <h3 style="font-family:var(--font-display);font-size:.9rem;letter-spacing:.1em;margin-bottom:20px;">
+                        TEST DETAILS</h3>
+                    <div id="msg" class="alert" style="display:none;"></div>
+                    <div class="form-group">
+                        <label>Test Title</label>
+                        <input type="text" id="test-title" class="form-control"
+                            placeholder="e.g. Python Fundamentals Test">
+                    </div>
+                    <div class="form-group">
+                        <label>Duration (minutes)</label>
+                        <input type="number" id="test-duration" class="form-control" value="60" min="1" max="360">
+                    </div>
+                    <div class="form-group">
+                        <label>Start Time</label>
+                        <input type="datetime-local" id="test-start" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>End Time</label>
+                        <input type="datetime-local" id="test-end" class="form-control">
+                    </div>
+
+                    <!-- Department Assignment -->
+                    <div class="form-group">
+                        <label>🏫 Assign to Departments <span style="font-size:.72rem;color:var(--text-muted);">(leave
+                                all unchecked = all)</span></label>
+                        <div id="dept-list"
+                            style="display:flex;flex-wrap:wrap;gap:8px;padding:10px;background:rgba(255,255,255,.03);border:1px solid var(--border-subtle);border-radius:8px;">
+                            <label
+                                style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.2);border-radius:20px;cursor:pointer;font-size:.78rem;">
+                                <input type="checkbox" class="dept-check" value="AI&amp;DS"
+                                    style="accent-color:var(--neon-blue);"> AI&amp;DS
+                            </label>
+                            <label
+                                style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.2);border-radius:20px;cursor:pointer;font-size:.78rem;">
+                                <input type="checkbox" class="dept-check" value="CSE"
+                                    style="accent-color:var(--neon-blue);"> CSE
+                            </label>
+                            <label
+                                style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.2);border-radius:20px;cursor:pointer;font-size:.78rem;">
+                                <input type="checkbox" class="dept-check" value="CYBER"
+                                    style="accent-color:var(--neon-blue);"> CYBER
+                            </label>
+                            <label
+                                style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.2);border-radius:20px;cursor:pointer;font-size:.78rem;">
+                                <input type="checkbox" class="dept-check" value="CSBS"
+                                    style="accent-color:var(--neon-blue);"> CSBS
+                            </label>
+                            <label
+                                style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.2);border-radius:20px;cursor:pointer;font-size:.78rem;">
+                                <input type="checkbox" class="dept-check" value="IT"
+                                    style="accent-color:var(--neon-blue);"> IT
+                            </label>
+                            <label
+                                style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.2);border-radius:20px;cursor:pointer;font-size:.78rem;">
+                                <input type="checkbox" class="dept-check" value="AI&amp;ML"
+                                    style="accent-color:var(--neon-blue);"> AI&amp;ML
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Problem & Student Selection -->
+                <div style="display:flex;flex-direction:column;gap:24px;">
+                    <div class="glass-card" style="padding:28px;">
+                        <h3
+                            style="font-family:var(--font-display);font-size:.9rem;letter-spacing:.1em;margin-bottom:20px;">
+                            SELECT PROBLEMS</h3>
+                        <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:16px;">Check the problems to
+                            include in this test:</p>
+                        <div id="problems-list"
+                            style="display:flex;flex-direction:column;gap:10px;max-height:280px;overflow-y:auto;">
+                            <p style="color:var(--text-muted);font-size:.82rem;">Loading problems…</p>
+                        </div>
+                    </div>
+
+                    <!-- Student Assignment -->
+                    <div class="glass-card" style="padding:28px;">
+                        <h3
+                            style="font-family:var(--font-display);font-size:.9rem;letter-spacing:.1em;margin-bottom:12px;">
+                            👤 SPECIFIC STUDENTS <span
+                                style="font-size:.72rem;color:var(--text-muted);font-weight:normal;letter-spacing:0;">(optional)</span>
+                        </h3>
+                        <div style="display:flex;gap:8px;margin-bottom:10px;">
+                            <select id="dept-filter" class="form-control" onchange="filterStudents(this.value)"
+                                style="flex:1;font-size:.82rem;">
+                                <option value="">-- Filter by Department --</option>
+                                <option value="AI&DS">AI&amp;DS</option>
+                                <option value="CSE">CSE</option>
+                                <option value="CYBER">CYBER</option>
+                                <option value="CSBS">CSBS</option>
+                                <option value="IT">IT</option>
+                                <option value="AI&ML">AI&amp;ML</option>
+                            </select>
+                        </div>
+                        <div id="students-list"
+                            style="max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+                            <p style="color:var(--text-muted);font-size:.82rem;">Loading students…</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top:24px;display:flex;gap:12px;justify-content:flex-end;">
+                <a href="/admin/dashboard" class="btn btn-outline">← Back to Dashboard</a>
+                <button class="btn btn-primary" onclick="createTest()">🚀 Create Test &amp; Copy Link</button>
+            </div>
+
+            <!-- Success panel -->
+            <div id="success-panel" style="display:none;margin-top:24px;" class="glass-card" style="padding:24px;">
+                <div style="padding:24px;">
+                    <h3
+                        style="font-family:var(--font-display);font-size:1rem;color:var(--neon-green);margin-bottom:12px;">
+                        ✅ TEST CREATED!</h3>
+                    <p style="font-size:.85rem;color:var(--text-secondary);margin-bottom:12px;">Share this exam link
+                        with students:</p>
+                    <div style="display:flex;gap:10px;align-items:center;">
+                        <input type="text" id="exam-link-box" class="form-control" readonly
+                            style="font-family:var(--font-code);font-size:.8rem;">
+                        <button class="btn btn-primary btn-sm" onclick="copyLink()">Copy</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script>
+        const user = requireAuth('master');
+        let allProblems = [];
+        let allStudents = [];
+
+        (async () => {
+            try {
+                allProblems = await API.get('/api/problems/');
+                const list = document.getElementById('problems-list');
+                if (!allProblems.length) {
+                    list.innerHTML = '<p style="color:var(--text-muted);font-size:.82rem;">No problems found. <a href="/admin/dashboard" style="color:var(--neon-blue);">Create some first →</a></p>';
+                } else {
+                    list.innerHTML = allProblems.map(p => `
+          <label style="display:flex;align-items:flex-start;gap:12px;padding:12px;border-radius:8px;border:1px solid var(--border-subtle);cursor:pointer;transition:.2s;" onmouseover="this.style.borderColor='var(--neon-blue)'" onmouseout="this.style.borderColor='var(--border-subtle)'">
+            <input type="checkbox" id="p-${p.id}" value="${p.id}" style="margin-top:2px;accent-color:var(--neon-blue);">
+            <div>
+              <div style="font-weight:600;font-size:.88rem;">${p.title}</div>
+              <div style="font-size:.75rem;color:var(--text-muted);">Sample: ${(p.sampleTestCases || []).length} | Hidden: ${(p.hiddenTestCases || []).length}</div>
+            </div>
+          </label>`).join('');
+                }
+            } catch (e) { showToast('Failed to load problems: ' + e.message, 'error'); }
+
+            // Load students
+            try {
+                allStudents = await API.get('/api/admin/students');
+                renderStudents(allStudents);
+            } catch (e) { showToast('Failed to load students: ' + e.message, 'error'); }
+        })();
+
+        function renderStudents(students) {
+            const list = document.getElementById('students-list');
+            if (!students.length) {
+                list.innerHTML = '<p style="color:var(--text-muted);font-size:.82rem;">No students found.</p>';
+                return;
+            }
+            list.innerHTML = students.map(s => `
+                <label style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:6px;border:1px solid var(--border-subtle);cursor:pointer;transition:.15s;" onmouseover="this.style.borderColor='var(--neon-blue)'" onmouseout="this.style.borderColor='var(--border-subtle)'">
+                    <input type="checkbox" class="stu-check" value="${s.id}" style="accent-color:var(--neon-blue);">
+                    <span style="font-size:.82rem;font-weight:600;">${s.name}</span>
+                    <span class="badge badge-info" style="font-size:.65rem;margin-left:auto;">${s.department || '—'}</span>
+                </label>`).join('');
+        }
+
+        window.filterStudents = (dept) => {
+            const filtered = dept ? allStudents.filter(s => s.department === dept) : allStudents;
+            renderStudents(filtered);
+        };
+
+        async function createTest() {
+            const title = document.getElementById('test-title').value.trim();
+            const duration = parseInt(document.getElementById('test-duration').value);
+            const start = document.getElementById('test-start').value;
+            const end = document.getElementById('test-end').value;
+            const selected = allProblems.filter(p => document.getElementById(`p-${p.id}`)?.checked).map(p => p.id);
+            const departments = [...document.querySelectorAll('.dept-check:checked')].map(c => c.value);
+            const assignedStudents = [...document.querySelectorAll('.stu-check:checked')].map(c => c.value);
+            const msgEl = document.getElementById('msg');
+
+            if (!title) { msgEl.className = 'alert alert-error'; msgEl.textContent = 'Title required'; msgEl.style.display = 'block'; return; }
+            if (!selected.length) { msgEl.className = 'alert alert-error'; msgEl.textContent = 'Select at least one problem'; msgEl.style.display = 'block'; return; }
+            msgEl.style.display = 'none';
+
+            try {
+                const test = await API.post('/api/tests/', {
+                    title, duration,
+                    startTime: start || null,
+                    endTime: end || null,
+                    problems: selected,
+                    departments,
+                    assignedStudents
+                });
+                const link = `${location.origin}/student/exam?testId=${test.id}&problems=${selected.join(',')}&duration=${duration}`;
+                document.getElementById('exam-link-box').value = link;
+                document.getElementById('success-panel').style.display = 'block';
+                document.getElementById('success-panel').scrollIntoView({ behavior: 'smooth' });
+                showToast('Test created successfully!', 'success');
+            } catch (e) { msgEl.className = 'alert alert-error'; msgEl.textContent = e.message; msgEl.style.display = 'block'; }
+        }
+
+        function copyLink() {
+            const box = document.getElementById('exam-link-box');
+            navigator.clipboard.writeText(box.value).then(() => showToast('Link copied!', 'success'));
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,134 @@
+C:\Users\sughan_7002\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jwt\api_jwt.py:147: InsecureKeyLengthWarning: The HMAC key is 31 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+  return self._jws.encode(
+C:\Users\sughan_7002\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\jwt\api_jwt.py:365: InsecureKeyLengthWarning: The HMAC key is 31 bytes long, which is below the minimum recommended length of 32 bytes for SHA256. See RFC 7518 Section 3.2.
+  decoded = self.decode_complete(
+======================================================================
+   COMPREHENSIVE TEST REPORT - Codex Test Platform
+======================================================================
+
+[1] APP CREATION & DATABASE CONNECTION
+--------------------------------------------------
+[OK] Connected to MongoDB: sample.ewd7bnm.mongodb.net
+  [OK] Flask app creation
+  [OK] MongoDB Atlas ping
+  [OK] Collections exist -- Found: ['submissions', 'problems', 'tests', 'activity_logs', 'users']
+  [OK] Email unique index on users -- Index found
+
+[2] MODELS
+--------------------------------------------------
+  [OK] user_schema()
+  [OK] DEPARTMENTS list -- 6 departments: ['AI&DS', 'CSE', 'CYBER', 'CSBS', 'IT', 'AI&ML']
+  [OK] problem_schema()
+  [OK] test_schema()
+  [OK] submission_schema()
+  [OK] activity_log_schema()
+
+[3] AUTH API
+--------------------------------------------------
+  [OK] Admin login -- Role: master
+  [OK] Student login -- Role: student
+  [OK] Invalid login rejected -- Status: 401
+  [OK] Admin login without master_key rejected -- Status: 403
+  [OK] GET /me (admin) -- Status: 200
+  [OK] Registration validation (empty fields) -- Status: 400
+  [OK] Registration validation (short password) -- Status: 400
+
+[4] PROBLEMS API
+--------------------------------------------------
+  [OK] GET /problems (admin) -- 3 problems found
+  [OK] Admin sees hidden test cases
+  [OK] GET /problems (student) -- 3 problems
+  [OK] Student hidden test cases stripped
+  [OK] GET single problem -- Status: 200
+  [OK] Unauthenticated access blocked -- Status: 401
+
+[5] TESTS API
+--------------------------------------------------
+  [OK] GET /tests (admin) -- 1 tests found
+  [OK] Available tests for student -- 1 tests
+
+[6] SUBMISSIONS API
+--------------------------------------------------
+  [OK] Run code (Sum of Two) -- 6/6 test cases passed
+  [OK] Submit code -- Score: 100/100, Result: passed
+  [OK] GET student submissions -- 2 submissions
+  [OK] Run validation (empty code) -- Status: 400
+
+[7] ADMIN API
+--------------------------------------------------
+  [OK] GET /stats -- Students: 2, Tests: 1, Submissions: 2
+  [OK] GET /students -- 2 students
+  [OK] GET /analytics -- Pass rate: 100.0%
+  [OK] GET /activity-logs -- Status: 200
+  [OK] GET /departments -- 6 departments
+  [OK] GET /tests/<id>/analytics -- Total: 2, Pass Rate: 100.0%
+  [OK] GET /tests/<id>/submissions -- Status: 200
+  [OK] CSV export -- Size: 456 bytes
+  [OK] Student blocked from admin API -- Status: 403
+
+[8] STUDENT API
+--------------------------------------------------
+  [OK] GET /api/student/submissions -- 2 submissions
+
+[9] ACTIVITY LOGGING API
+--------------------------------------------------
+  [OK] POST /activity/log -- Logged: True, Violations: 1
+  [OK] GET /activity/logs (admin) -- 1 logs
+
+[10] COMPLEXITY ANALYZER API
+--------------------------------------------------
+  [OK] GET /status -- Server token available: True
+  [OK] Validation (empty code) -- Status: 400
+  [OK] Validation (bad model) -- Status: 400
+  [OK] Analyze code (live HF API) -- Time: O(n^2), Space: O(1)
+
+[11] FRONTEND PAGES
+--------------------------------------------------
+  [OK] Landing page (/) -- 4160 bytes
+  [OK] Login page (/login) -- 6106 bytes
+  [OK] Register page (/register) -- 7689 bytes
+  [OK] Admin dashboard (/admin/dashboard) -- 39964 bytes
+  [OK] Admin create test (/admin/create-test) -- 16033 bytes
+  [OK] Admin students (/admin/students) -- 8925 bytes
+  [OK] Student dashboard (/student/dashboard) -- 3997 bytes
+  [OK] Student exam page (/student/exam) -- 10999 bytes
+  [OK] Global CSS -- Status: 200
+  [OK] Admin CSS -- Status: 200
+  [OK] Auth CSS -- Status: 200
+  [OK] Student CSS -- Status: 200
+  [OK] Exam CSS -- Status: 200
+  [OK] Landing CSS -- Status: 200
+  [OK] API JS module -- Status: 200
+
+[12] DATABASE DATA INTEGRITY
+--------------------------------------------------
+  [OK] Users in Atlas -- Total: 3 (Admins: 1, Students: 2)
+  [OK] Problems in Atlas -- 3 problems
+  [OK] Tests in Atlas -- 1 tests
+  [OK] Submissions in Atlas -- 2 submissions
+
+[13] SECURITY CHECKS
+--------------------------------------------------
+  [OK] Problems requires auth -- Status: 401
+  [OK] Tests requires auth -- Status: 401
+  [OK] Submissions requires auth -- Status: 401
+  [OK] Admin stats requires auth -- Status: 401
+  [OK] Student submissions requires auth -- Status: 401
+  [OK] Complexity status requires auth -- Status: 401
+  [OK] Header: X-Content-Type-Options -- nosniff
+  [OK] Header: X-Frame-Options -- DENY
+
+[14] ERROR HANDLING
+--------------------------------------------------
+  [OK] 404 handler -- Status: 404
+  [OK] Invalid ObjectId handling -- Status: 400
+
+======================================================================
+   FINAL RESULTS
+======================================================================
+   Passed:   74/74
+   Failed:   0/74
+   Warnings: 0/74
+
+   ALL TESTS PASSED! Application is ready for deployment.
+======================================================================

@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard — Codex Test</title>
+    <meta name="description"
+        content="Codex Test admin command center — manage problems, tests, students and analytics.">
+    <link rel="stylesheet" href="/static/css/global.css">
+    <link rel="stylesheet" href="/static/css/admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+    <div id="toast-container"></div>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <!-- Hamburger (inside sidebar top on mobile) -->
+            <div style="padding: 0 16px 16px; display:flex; align-items:center; justify-content:space-between;">
+                <div class="sidebar-logo" style="padding:0; border:none; margin:0; flex:1;">
+                    <div class="sidebar-logo-text">CODEX TEST</div>
+                    <div class="sidebar-role">⚡ Master Admin — <span id="admin-name"
+                            style="color:var(--neon-blue);">…</span></div>
+                </div>
+                <button class="hamburger open mobile-only" id="hamburger-close" onclick="closeSidebar()"
+                    aria-label="Close menu">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a class="nav-item active" data-section="overview" onclick="showSection('overview',this)">
+                    <span class="nav-icon">📊</span> Overview
+                </a>
+                <a class="nav-item" data-section="problems" onclick="showSection('problems',this)">
+                    <span class="nav-icon">📝</span> Problems
+                </a>
+                <a class="nav-item" data-section="tests" onclick="showSection('tests',this)">
+                    <span class="nav-icon">🧪</span> Manage Tests
+                </a>
+                <a class="nav-item" href="/admin/create-test">
+                    <span class="nav-icon">⏱️</span> Create Test
+                </a>
+                <a class="nav-item" data-section="students" onclick="showSection('students',this)">
+                    <span class="nav-icon">👥</span> Students
+                </a>
+                <a class="nav-item" data-section="submissions" onclick="showSection('submissions',this)">
+                    <span class="nav-icon">📤</span> Submissions
+                </a>
+                <a class="nav-item" data-section="activity" onclick="showSection('activity',this)">
+                    <span class="nav-icon">🛡️</span> Activity Logs
+                </a>
+                <a class="nav-item" data-section="analytics" onclick="showSection('analytics',this)">
+                    <span class="nav-icon">📈</span> Analytics
+                </a>
+            </nav>
+            <div class="sidebar-bottom">
+                <button class="nav-item" onclick="logout()"><span class="nav-icon">🚪</span> Logout</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+
+            <!-- Mobile Top Bar -->
+            <div class="mobile-only" style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+                <button class="hamburger" id="hamburger-open" onclick="openSidebar()" aria-label="Open menu">
+                    <span></span><span></span><span></span>
+                </button>
+                <span
+                    style="font-family:var(--font-display);font-size:0.95rem;font-weight:700;background:var(--gradient-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:0.15em;">CODEX
+                    TEST</span>
+            </div>
+
+            <!-- ══════════════ OVERVIEW ══════════════ -->
+            <div id="section-overview" class="section active">
+                <div class="page-header"
+                    style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+                    <div>
+                        <h1 class="page-title">COMMAND CENTER</h1>
+                        <p class="page-sub">Platform overview and quick stats</p>
+                    </div>
+                    <span id="overview-time" style="font-size:.75rem;color:var(--text-muted);"></span>
+                </div>
+
+                <!-- Stat cards -->
+                <div class="grid-4" id="stat-cards" style="margin-bottom:24px;">
+                    <div class="glass-card stat-card">
+                        <div class="stat-value" id="s-students">—</div>
+                        <div class="stat-label">Total Students</div>
+                    </div>
+                    <div class="glass-card stat-card">
+                        <div class="stat-value" id="s-tests">—</div>
+                        <div class="stat-label">Total Tests</div>
+                    </div>
+                    <div class="glass-card stat-card">
+                        <div class="stat-value" id="s-submissions">—</div>
+                        <div class="stat-label">Submissions</div>
+                    </div>
+                    <div class="glass-card stat-card">
+                        <div class="stat-value" id="s-suspicious" style="color:#ef4444;">—</div>
+                        <div class="stat-label">Suspicious Events</div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions" style="margin-bottom:28px;">
+                    <a href="/admin/create-test" class="quick-action-card">
+                        <div class="quick-action-icon">⏱️</div>
+                        <div>
+                            <div class="quick-action-label">Create Test</div>
+                            <div class="quick-action-sub">Schedule a new exam</div>
+                        </div>
+                    </a>
+                    <div class="quick-action-card"
+                        onclick="showSection('problems', document.querySelector('[data-section=problems]'))">
+                        <div class="quick-action-icon">📝</div>
+                        <div>
+                            <div class="quick-action-label">Add Problem</div>
+                            <div class="quick-action-sub">Create coding question</div>
+                        </div>
+                    </div>
+                    <div class="quick-action-card"
+                        onclick="showSection('tests', document.querySelector('[data-section=tests]'))">
+                        <div class="quick-action-icon">🧪</div>
+                        <div>
+                            <div class="quick-action-label">Manage Tests</div>
+                            <div class="quick-action-sub">View & reschedule</div>
+                        </div>
+                    </div>
+                    <div class="quick-action-card"
+                        onclick="showSection('analytics', document.querySelector('[data-section=analytics]'))">
+                        <div class="quick-action-icon">📈</div>
+                        <div>
+                            <div class="quick-action-label">Analytics</div>
+                            <div class="quick-action-sub">Performance insights</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Tests -->
+                <div class="glass-card" style="padding:24px 28px;">
+                    <div
+                        style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+                        <h3 style="font-family:var(--font-display);font-size:.88rem;letter-spacing:.12em;">RECENT TESTS
+                        </h3>
+                        <button class="btn btn-outline btn-sm"
+                            onclick="showSection('tests', document.querySelector('[data-section=tests]'))">View All
+                            →</button>
+                    </div>
+                    <div id="recent-tests-list">
+                        <div style="color:var(--text-muted);font-size:.85rem;text-align:center;padding:20px;">Loading…
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══════════════ PROBLEMS ══════════════ -->
+            <div id="section-problems" class="section">
+                <div class="page-header"
+                    style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+                    <div>
+                        <h1 class="page-title">PROBLEMS</h1>
+                        <p class="page-sub">Manage coding problems and test cases</p>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="openProblemModal()">+ Add Problem</button>
+                </div>
+                <div class="glass-card" style="padding:24px;">
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Sample Cases</th>
+                                    <th>Hidden Cases</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="problems-table-body">
+                                <tr>
+                                    <td colspan="5" style="color:var(--text-muted);text-align:center;padding:32px;">
+                                        Loading…</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══════════════ TESTS MANAGEMENT ══════════════ -->
+            <div id="section-tests" class="section">
+                <div class="page-header"
+                    style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+                    <div>
+                        <h1 class="page-title">MANAGE TESTS</h1>
+                        <p class="page-sub">View, reschedule and inspect student submissions for each test</p>
+                    </div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                        <div class="search-bar">
+                            <input type="text" id="test-search" placeholder="Search tests…"
+                                oninput="filterTests(this.value)">
+                        </div>
+                        <button class="btn btn-primary btn-sm" onclick="openTestModal()">+ Create Test</button>
+                    </div>
+                </div>
+                <div class="glass-card" style="padding:24px;">
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Departments</th>
+                                    <th>Problems</th>
+                                    <th>Duration</th>
+                                    <th>Start</th>
+                                    <th>End</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tests-table-body">
+                                <tr>
+                                    <td colspan="9" style="color:var(--text-muted);text-align:center;padding:32px;">
+                                        Loading…</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══════════════ STUDENTS ══════════════ -->
+            <div id="section-students" class="section">
+                <div class="page-header"
+                    style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+                    <div>
+                        <h1 class="page-title">STUDENTS</h1>
+                        <p class="page-sub">Monitor and manage student accounts</p>
+                    </div>
+                    <div class="search-bar">
+                        <input type="text" id="student-search" placeholder="Search students…"
+                            oninput="filterStudents(this.value)">
+                    </div>
+                </div>
+                <div class="glass-card" style="padding:24px;">
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Department</th>
+                                    <th>Email</th>
+                                    <th>Status</th>
+                                    <th>Joined</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="students-table-body">
+                                <tr>
+                                    <td colspan="6" style="color:var(--text-muted);text-align:center;padding:32px;">
+                                        Loading…</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══════════════ SUBMISSIONS ══════════════ -->
+            <div id="section-submissions" class="section">
+                <div class="page-header"
+                    style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+                    <div>
+                        <h1 class="page-title">ALL SUBMISSIONS</h1>
+                        <p class="page-sub">Every code submission across all tests</p>
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="openExportModal()">⬇ Export CSV</button>
+                </div>
+                <div class="glass-card" style="padding:24px;">
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Language</th>
+                                    <th>Result</th>
+                                    <th>Score</th>
+                                    <th>Time</th>
+                                    <th>Submitted</th>
+                                </tr>
+                            </thead>
+                            <tbody id="submissions-table-body">
+                                <tr>
+                                    <td colspan="6" style="color:var(--text-muted);text-align:center;padding:32px;">
+                                        Loading…</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══════════════ ACTIVITY LOGS ══════════════ -->
+            <div id="section-activity" class="section">
+                <div class="page-header">
+                    <h1 class="page-title">ACTIVITY LOGS</h1>
+                    <p class="page-sub">Anti-cheat events and suspicious activity</p>
+                </div>
+                <div class="glass-card" style="padding:24px;">
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Event</th>
+                                    <th>Details</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activity-table-body">
+                                <tr>
+                                    <td colspan="4" style="color:var(--text-muted);text-align:center;padding:32px;">
+                                        Loading…</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══════════════ ANALYTICS ══════════════ -->
+            <div id="section-analytics" class="section">
+                <div class="page-header">
+                    <h1 class="page-title">ANALYTICS</h1>
+                    <p class="page-sub">Performance metrics and attendance overview</p>
+                </div>
+
+                <div class="grid-2" style="margin-bottom:24px;">
+                    <div class="glass-card" style="padding:28px;">
+                        <h3
+                            style="font-family:var(--font-display);font-size:.86rem;margin-bottom:20px;letter-spacing:.1em;">
+                            PASS / FAIL RATE</h3>
+                        <div style="position:relative;height:220px;display:flex;justify-content:center;">
+                            <canvas id="passFailChart"></canvas>
+                        </div>
+                        <div id="pass-fail-legend"
+                            style="display:flex;gap:20px;justify-content:center;margin-top:14px;font-size:.78rem;flex-wrap:wrap;">
+                        </div>
+                    </div>
+                    <div class="glass-card" style="padding:28px;">
+                        <h3
+                            style="font-family:var(--font-display);font-size:.86rem;margin-bottom:20px;letter-spacing:.1em;">
+                            SUBMISSIONS BY LANGUAGE</h3>
+                        <div style="position:relative;height:220px;">
+                            <canvas id="langChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card" style="padding:24px;margin-bottom:24px;">
+                    <h3
+                        style="font-family:var(--font-display);font-size:.86rem;margin-bottom:16px;letter-spacing:.1em;">
+                        STUDENT PERFORMANCE</h3>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Total Submissions</th>
+                                    <th>Passed</th>
+                                    <th>Failed</th>
+                                    <th>Pass Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody id="student-stats-tbody">
+                                <tr>
+                                    <td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">
+                                        Loading…</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="glass-card" style="padding:24px;">
+                        <h3
+                            style="font-family:var(--font-display);font-size:.82rem;margin-bottom:14px;letter-spacing:.1em;color:var(--neon-green);">
+                            ATTENDED <span id="attended-count" style="font-size:.72rem;"></span></h3>
+                        <div class="table-wrap">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="attended-tbody">
+                                    <tr>
+                                        <td colspan="3" style="text-align:center;padding:16px;color:var(--text-muted);">
+                                            Loading…</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="glass-card" style="padding:24px;">
+                        <h3
+                            style="font-family:var(--font-display);font-size:.82rem;margin-bottom:14px;letter-spacing:.1em;color:#f87171;">
+                            NOT ATTENDED <span id="not-attended-count" style="font-size:.72rem;"></span></h3>
+                        <div class="table-wrap">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="not-attended-tbody">
+                                    <tr>
+                                        <td colspan="3" style="text-align:center;padding:16px;color:var(--text-muted);">
+                                            Loading…</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ══ Add/Edit Problem Modal ══ -->
+    <div id="problem-modal" style="display:none;" class="modal-overlay">
+        <div class="glass-card modal-box" style="max-width:640px;max-height:88vh;overflow-y:auto;">
+            <h2 style="font-family:var(--font-display);font-size:1rem;letter-spacing:.1em;margin-bottom:20px;"
+                id="problem-modal-title">ADD PROBLEM</h2>
+            <div class="form-group"><label>Title</label><input type="text" id="pm-title" class="form-control"
+                    placeholder="Problem title"></div>
+            <div class="form-group"><label>Description</label><textarea id="pm-desc" class="form-control" rows="5"
+                    placeholder="Describe the problem clearly…"></textarea></div>
+            <div class="form-group">
+                <label>Sample Test Cases <span
+                        style="font-size:.72rem;color:var(--text-muted);">[{input:"…",output:"…"}]</span></label>
+                <textarea id="pm-sample" class="form-control" rows="3"
+                    placeholder='[{"input":"5\n","output":"25\n"}]'></textarea>
+            </div>
+            <div class="form-group">
+                <label>Hidden Test Cases</label>
+                <textarea id="pm-hidden" class="form-control" rows="3"
+                    placeholder='[{"input":"10\n","output":"100\n"}]'></textarea>
+            </div>
+            <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px;flex-wrap:wrap;">
+                <button class="btn btn-outline btn-sm" onclick="closeProblemModal()">Cancel</button>
+                <button class="btn btn-primary btn-sm" onclick="saveProblem()">Save Problem</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ Create Test Modal ══ -->
+    <div id="test-modal" style="display:none;" class="modal-overlay">
+        <div class="glass-card modal-box" style="max-width:640px;max-height:92vh;overflow-y:auto;">
+            <h2 style="font-family:var(--font-display);font-size:1rem;letter-spacing:.1em;margin-bottom:20px;">CREATE
+                TEST</h2>
+            <div class="form-group"><label>Test Title</label><input type="text" id="tm-title" class="form-control"
+                    placeholder="e.g. Python Fundamentals Test"></div>
+            <div class="form-group">
+                <label>Select Problems</label>
+                <div id="tm-problem-list"
+                    style="background:rgba(255,255,255,0.03);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);max-height:160px;overflow-y:auto;padding:10px;">
+                    <div style="color:var(--text-muted);font-size:.82rem;">Loading problems…</div>
+                </div>
+                <input type="hidden" id="tm-problems">
+            </div>
+            <div class="form-group"><label>Duration (minutes)</label><input type="number" id="tm-duration"
+                    class="form-control" value="60" min="1"></div>
+            <div class="form-group"><label>Start Time <span style="font-size:.72rem;color:var(--text-muted);">(leave
+                        blank = always active)</span></label><input type="datetime-local" id="tm-start"
+                    class="form-control"></div>
+            <div class="form-group"><label>End Time</label><input type="datetime-local" id="tm-end"
+                    class="form-control"></div>
+
+            <!-- Department Assignment -->
+            <div class="form-group">
+                <label>🏫 Assign to Departments <span style="font-size:.72rem;color:var(--text-muted);">(leave all
+                        unchecked = all departments)</span></label>
+                <div id="tm-dept-list"
+                    style="display:flex;flex-wrap:wrap;gap:8px;padding:10px;background:rgba(255,255,255,.03);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);">
+                    <div style="color:var(--text-muted);font-size:.82rem;">Loading…</div>
+                </div>
+            </div>
+
+            <!-- Student Assignment -->
+            <div class="form-group">
+                <label>👤 Assign Specific Students <span style="font-size:.72rem;color:var(--text-muted);">(optional –
+                        overrides department filter)</span></label>
+                <div style="display:flex;gap:8px;margin-bottom:8px;">
+                    <select id="tm-dept-filter" class="form-control" style="flex:1;"
+                        onchange="filterTmStudents(this.value)">
+                        <option value="">-- Filter by Department --</option>
+                    </select>
+                </div>
+                <div id="tm-student-list"
+                    style="background:rgba(255,255,255,.03);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);max-height:160px;overflow-y:auto;padding:10px;">
+                    <div style="color:var(--text-muted);font-size:.82rem;">Loading students…</div>
+                </div>
+            </div>
+
+            <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px;flex-wrap:wrap;">
+                <button class="btn btn-outline btn-sm" onclick="closeTestModal()">Cancel</button>
+                <button class="btn btn-primary btn-sm" onclick="saveTest()">Create Test</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ Export CSV Modal ══ -->
+    <div id="export-modal" style="display:none;" class="modal-overlay">
+        <div class="glass-card modal-box" style="max-width:480px;">
+            <h2 style="font-family:var(--font-display);font-size:1rem;letter-spacing:.1em;margin-bottom:6px;">⬇ EXPORT
+                CSV</h2>
+            <p style="font-size:.82rem;color:var(--text-muted);margin-bottom:20px;">Filter results by test name and/or
+                department. Leave blank to export all.</p>
+            <div class="form-group">
+                <label>Test Name</label>
+                <select id="exp-test-name" class="form-control">
+                    <option value="">-- All Tests --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Department</label>
+                <select id="exp-department" class="form-control">
+                    <option value="">-- All Departments --</option>
+                    <option value="AI&amp;DS">AI&amp;DS</option>
+                    <option value="CSE">CSE</option>
+                    <option value="CYBER">CYBER</option>
+                    <option value="CSBS">CSBS</option>
+                    <option value="IT">IT</option>
+                    <option value="AI&amp;ML">AI&amp;ML</option>
+                </select>
+            </div>
+            <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:8px;flex-wrap:wrap;">
+                <button class="btn btn-outline btn-sm"
+                    onclick="document.getElementById('export-modal').style.display='none'">Cancel</button>
+                <button class="btn btn-primary btn-sm" onclick="doExportCSV()">⬇ Download CSV</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ Reschedule Modal ══ -->
+    <div id="reschedule-modal" style="display:none;" class="modal-overlay">
+        <div class="glass-card modal-box" style="max-width:520px;">
+            <h2 style="font-family:var(--font-display);font-size:1rem;letter-spacing:.1em;margin-bottom:6px;">🗓
+                RESCHEDULE TEST</h2>
+            <p id="rs-test-name" style="font-size:.82rem;color:var(--neon-blue);margin-bottom:16px;font-weight:600;">
+            </p>
+            <div
+                style="background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.2);border-radius:8px;padding:12px;margin-bottom:20px;font-size:.78rem;color:var(--neon-blue);">
+                ⏱ Max window: <strong>24 hours</strong>. Start time must be in the future.
+            </div>
+            <div class="form-group">
+                <label>New Start Time</label>
+                <input type="datetime-local" id="rs-start" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>New End Time</label>
+                <input type="datetime-local" id="rs-end" class="form-control">
+            </div>
+            <div id="rs-preview" style="font-size:.78rem;color:var(--text-muted);margin-bottom:16px;min-height:20px;">
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;flex-wrap:wrap;">
+                <button class="btn btn-outline btn-sm" onclick="clearSchedule()"
+                    style="color:#f87171;border-color:#f87171;">✕ Clear (Always Active)</button>
+                <button class="btn btn-outline btn-sm" onclick="closeRescheduleModal()">Cancel</button>
+                <button class="btn btn-primary btn-sm" onclick="saveReschedule()">✅ Save Schedule</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ Student Code Viewer ══ -->
+    <div id="code-viewer" style="display:none;" class="code-viewer-overlay">
+        <div class="code-viewer-sidebar">
+            <div style="padding:16px 16px 12px;border-bottom:1px solid var(--border-subtle);flex-shrink:0;">
+                <div
+                    style="font-family:var(--font-display);font-size:.78rem;letter-spacing:.1em;color:var(--neon-blue);margin-bottom:4px;">
+                    TEST SUBMISSIONS</div>
+                <div id="cv-test-title" style="font-size:.85rem;font-weight:600;"></div>
+            </div>
+            <div class="code-viewer-list" id="cv-list">
+                <div style="color:var(--text-muted);font-size:.82rem;padding:20px;text-align:center;">Loading…</div>
+            </div>
+        </div>
+        <div class="code-viewer-main">
+            <div class="code-viewer-header">
+                <div>
+                    <div
+                        style="font-family:var(--font-display);font-size:.78rem;letter-spacing:.1em;color:var(--text-muted);">
+                        STUDENT CODE</div>
+                    <div id="cv-student-name" style="font-size:1rem;font-weight:700;margin-top:4px;">Select a submission
+                        →</div>
+                </div>
+                <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                    <span id="cv-lang" class="badge badge-info"></span>
+                    <span id="cv-result" class="badge"></span>
+                    <span id="cv-score"
+                        style="font-family:var(--font-display);font-size:.9rem;color:var(--neon-blue);font-weight:700;"></span>
+                    <button class="btn btn-outline btn-sm" onclick="closeCodeViewer()">✕ Close</button>
+                </div>
+            </div>
+            <div class="code-viewer-code" id="cv-code-area">
+                <div class="code-empty">
+                    <div style="font-size:2.5rem;">👈</div>
+                    <div>Select a student submission from the left panel</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ Per-Test Analytics Modal ══ -->
+    <div id="test-analytics-modal" style="display:none;" class="modal-overlay">
+        <div class="glass-card modal-box" style="max-width:900px;max-height:92vh;overflow-y:auto;">
+            <div
+                style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+                <div>
+                    <h2 style="font-family:var(--font-display);font-size:1rem;letter-spacing:.1em;margin:0;">📊 TEST
+                        ANALYTICS</h2>
+                    <p id="ta-test-title"
+                        style="font-size:.88rem;color:var(--neon-blue);margin:6px 0 0;font-weight:600;"></p>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="closeTestAnalytics()">✕ Close</button>
+            </div>
+
+            <!-- Stats Row -->
+            <div id="ta-stats-row" class="grid-4"
+                style="margin-bottom:20px;gap:12px;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));">
+            </div>
+
+            <!-- Charts -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+                <div class="glass-card" style="padding:20px;">
+                    <h3
+                        style="font-family:var(--font-display);font-size:.78rem;margin-bottom:12px;letter-spacing:.1em;">
+                        PASS / FAIL</h3>
+                    <div style="position:relative;height:180px;display:flex;justify-content:center;"><canvas
+                            id="ta-pf-chart"></canvas></div>
+                </div>
+                <div class="glass-card" style="padding:20px;">
+                    <h3
+                        style="font-family:var(--font-display);font-size:.78rem;margin-bottom:12px;letter-spacing:.1em;">
+                        BY LANGUAGE</h3>
+                    <div style="position:relative;height:180px;"><canvas id="ta-lang-chart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Student Performance -->
+            <div class="glass-card" style="padding:20px;margin-bottom:16px;">
+                <h3 style="font-family:var(--font-display);font-size:.78rem;margin-bottom:12px;letter-spacing:.1em;">
+                    STUDENT PERFORMANCE</h3>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Submissions</th>
+                                <th>Passed</th>
+                                <th>Failed</th>
+                                <th>Pass Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ta-student-tbody">
+                            <tr>
+                                <td colspan="5" style="text-align:center;padding:20px;color:var(--text-muted);">Loading…
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Attendance -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                <div class="glass-card" style="padding:20px;">
+                    <h3
+                        style="font-family:var(--font-display);font-size:.78rem;margin-bottom:10px;letter-spacing:.1em;color:var(--neon-green);">
+                        ATTENDED <span id="ta-attended-count" style="font-size:.7rem;"></span></h3>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Dept</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ta-attended-tbody">
+                                <tr>
+                                    <td colspan="4" style="text-align:center;padding:16px;color:var(--text-muted);">
+                                        Loading…</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="glass-card" style="padding:20px;">
+                    <h3
+                        style="font-family:var(--font-display);font-size:.78rem;margin-bottom:10px;letter-spacing:.1em;color:#f87171;">
+                        NOT ATTENDED <span id="ta-not-attended-count" style="font-size:.7rem;"></span></h3>
+                    <div class="table-wrap">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Dept</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ta-not-attended-tbody">
+                                <tr>
+                                    <td colspan="4" style="text-align:center;padding:16px;color:var(--text-muted);">
+                                        Loading…</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/admin-dashboard.js"></script>
+</body>
+
+</html>

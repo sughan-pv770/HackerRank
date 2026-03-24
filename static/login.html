@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — Codex Test</title>
+    <link rel="stylesheet" href="/static/css/global.css">
+    <link rel="stylesheet" href="/static/css/auth.css">
+</head>
+
+<body>
+    <div class="orb orb-1" style="position:fixed;z-index:0;"></div>
+    <div class="orb orb-2" style="position:fixed;z-index:0;"></div>
+    <div class="grid-overlay"
+        style="position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(rgba(0,212,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.04) 1px,transparent 1px);background-size:60px 60px;">
+    </div>
+    <div id="toast-container"></div>
+
+    <div class="auth-page">
+        <div class="glass-card auth-card">
+            <div class="auth-logo">
+                <div class="auth-logo-text">CODEX TEST</div>
+                <div class="auth-logo-sub">Secure Coding Platform</div>
+            </div>
+            <h2 class="auth-title">Welcome Back</h2>
+            <p class="auth-sub">Sign in to access your dashboard</p>
+
+            <div id="error-msg" class="alert alert-error" style="display:none;"></div>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" class="form-control" placeholder="you@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Login As</label>
+                    <div class="role-selector">
+                        <input type="radio" name="login-role" id="login-student" value="student" class="role-option"
+                            checked>
+                        <label for="login-student" class="role-label">
+                            <span class="role-icon">👨‍💻</span>
+                            <span>Student</span>
+                        </label>
+                        <input type="radio" name="login-role" id="login-master" value="master" class="role-option">
+                        <label for="login-master" class="role-label">
+                            <span class="role-icon">🛡️</span>
+                            <span>Admin (Master)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group" id="master-key-group" style="display:none;">
+                    <label>🔑 Master Key</label>
+                    <input type="password" id="master-key" class="form-control" placeholder="Enter admin master key">
+                    <small style="color:var(--text-muted,#888);font-size:0.78rem;margin-top:4px;display:block;">Required
+                        for Admin login only.</small>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="login-btn"
+                    style="width:100%;justify-content:center;margin-top:8px;">
+                    Sign In
+                </button>
+            </form>
+
+            <div class="auth-link">
+                Don't have an account? <a href="/register">Create one</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/auth.js"></script>
+    <script>
+        // Check already logged in
+        const token = localStorage.getItem('terv_token');
+        const user = JSON.parse(localStorage.getItem('terv_user') || 'null');
+        if (token && user) {
+            window.location.href = user.role === 'master' ? '/admin/dashboard' : '/student/dashboard';
+        }
+
+        // Show/hide master key field based on role selection
+        document.querySelectorAll('input[name="login-role"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                const masterKeyGroup = document.getElementById('master-key-group');
+                const masterKeyInput = document.getElementById('master-key');
+                if (radio.value === 'master' && radio.checked) {
+                    masterKeyGroup.style.display = 'block';
+                    masterKeyInput.required = true;
+                } else if (radio.checked) {
+                    masterKeyGroup.style.display = 'none';
+                    masterKeyInput.required = false;
+                    masterKeyInput.value = '';
+                }
+            });
+        });
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('login-btn');
+            btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Signing in…';
+            const err = document.getElementById('error-msg');
+            err.style.display = 'none';
+            const selectedRole = document.querySelector('input[name="login-role"]:checked').value;
+            const payload = {
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value
+            };
+            if (selectedRole === 'master') {
+                payload.master_key = document.getElementById('master-key').value;
+            }
+            try {
+                const data = await API.post('/api/auth/login', payload);
+                localStorage.setItem('terv_token', data.token);
+                localStorage.setItem('terv_user', JSON.stringify(data.user));
+                window.location.href = data.user.role === 'master' ? '/admin/dashboard' : '/student/dashboard';
+            } catch (ex) {
+                err.textContent = ex.message || 'Login failed';
+                err.style.display = 'block';
+                btn.disabled = false; btn.textContent = 'Sign In';
+            }
+        });
+    </script>
+</body>
+
+</html>

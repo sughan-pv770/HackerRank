@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam — Codex Test</title>
+    <link rel="stylesheet" href="/static/css/global.css">
+    <link rel="stylesheet" href="/static/css/exam.css">
+    <!-- Monaco Editor from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+</head>
+
+<body>
+    <div id="toast-container"></div>
+
+    <!-- Anti-cheat warning overlay -->
+    <div id="anticheat-overlay" class="anticheat-overlay" style="display:none;">
+        <div class="glass-card anticheat-box">
+            <div class="anticheat-icon">⚠️</div>
+            <h2 class="anticheat-title">VIOLATION DETECTED</h2>
+            <p class="anticheat-msg" id="ac-msg">Tab switching is not allowed during the exam.</p>
+            <div class="violation-dots" id="violation-dots">
+                <div class="violation-dot" id="vd-1"></div>
+                <div class="violation-dot" id="vd-2"></div>
+                <div class="violation-dot" id="vd-3"></div>
+            </div>
+            <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:20px;">
+                3 violations will result in automatic submission
+            </p>
+            <button class="btn btn-outline btn-sm" onclick="dismissWarning()">I Understand — Return to Exam</button>
+        </div>
+    </div>
+
+    <!-- Start Exam Overlay to ensure Fullscreen -->
+    <div id="start-overlay" class="anticheat-overlay"
+        style="display:flex; z-index: 10000; background: var(--bg-dark); align-items:center; justify-content:center;">
+        <div class="glass-card anticheat-box" style="text-align:center;">
+            <div class="anticheat-icon" style="color:var(--neon-blue);">📱</div>
+            <h2 class="anticheat-title" style="color:var(--neon-blue);">Ready to Start?</h2>
+            <p class="anticheat-msg" style="margin-bottom: 24px;">This exam must be taken in Fullscreen Mode.</p>
+            <button class="btn btn-primary" onclick="startExamFullscreen()">Start Exam in Fullscreen</button>
+        </div>
+    </div>
+
+    <div class="exam-layout">
+        <!-- Top bar -->
+        <div class="exam-topbar">
+            <span class="exam-title" id="exam-title">Loading…</span>
+            <div class="exam-timer" id="exam-timer">--:--</div>
+            <button class="btn btn-danger btn-sm" id="submit-btn" onclick="submitSolution()">Submit</button>
+        </div>
+
+        <!-- Body -->
+        <div class="exam-body">
+            <!-- Problem panel -->
+            <div class="problem-panel" id="problem-panel">
+                <div id="problem-selector" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;"></div>
+                <h3 class="problem-panel-title" id="prob-title">Loading problem…</h3>
+                <div class="problem-description" id="prob-desc"></div>
+
+                <div style="margin-top:20px;">
+                    <div
+                        style="font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;">
+                        Sample Test Cases</div>
+                    <div id="sample-cases"></div>
+                </div>
+            </div>
+
+            <!-- Editor panel -->
+            <div class="editor-panel">
+                <div class="editor-toolbar">
+                    <div class="custom-dropdown" id="lang-custom-dropdown" tabindex="0" onblur="closeLangDropdown()">
+                        <div class="dropdown-selected" onclick="toggleLangDropdown()">
+                            <span class="dropdown-icon" id="lang-selected-icon">🐍</span>
+                            <span id="lang-selected-text" style="flex:1;">Python</span>
+                            <span class="dropdown-arrow">▼</span>
+                        </div>
+                        <div class="dropdown-options" id="lang-options">
+                            <div class="dropdown-option active" data-val="python"
+                                onclick="selectLanguageUI('python', '🐍', 'Python', this)">
+                                <span>🐍</span> Python
+                            </div>
+                            <div class="dropdown-option" data-val="javascript"
+                                onclick="selectLanguageUI('javascript', '🟨', 'JavaScript', this)">
+                                <span>🟨</span> JavaScript
+                            </div>
+                            <div class="dropdown-option" data-val="java"
+                                onclick="selectLanguageUI('java', '☕', 'Java', this)">
+                                <span>☕</span> Java
+                            </div>
+                            <div class="dropdown-option" data-val="c" onclick="selectLanguageUI('c', '©️', 'C', this)">
+                                <span>©️</span> C
+                            </div>
+                            <div class="dropdown-option" data-val="cpp"
+                                onclick="selectLanguageUI('cpp', '➕', 'C++', this)">
+                                <span>➕</span> C++
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="lang-select" value="python">
+                    <button class="btn btn-outline btn-sm" onclick="runCode()">▶ Run</button>
+                    <span style="flex:1;"></span>
+                    <span style="font-size:.78rem;color:var(--text-muted);" id="run-status"></span>
+                </div>
+
+                <div id="monaco-editor"></div>
+
+                <div class="output-panel">
+                    <div class="output-panel-header">
+                        <span>Output</span>
+                        <span id="test-summary" style="color:var(--neon-blue);font-size:.78rem;"></span>
+                    </div>
+                    <div class="output-cases" id="output-cases">
+                        <p style="color:var(--text-muted);font-size:.82rem;">Click ▶ Run to execute against sample test
+                            cases.</p>
+                    </div>
+                </div>
+
+                <!-- ===== COMPLEXITY ANALYZER PANEL ===== -->
+                <div class="complexity-panel" id="complexity-panel">
+                    <div class="complexity-panel-header" onclick="toggleComplexityPanel()">
+                        <span style="font-size:0.9rem;">🔬</span>
+                        <span class="complexity-panel-label">
+                            <span>Complexity Analyzer</span> — AI-powered Big-O analysis
+                        </span>
+                        <span class="complexity-status-badge" id="complexity-status-badge" style="display:none;">
+                            <span class="status-dot"></span> AI Ready
+                        </span>
+                        <span class="complexity-chevron" id="complexity-chevron">▼</span>
+                    </div>
+                    <div class="complexity-panel-body" id="complexity-panel-body">
+                        <!-- Server token notice (shown when server has token) -->
+                        <div class="complexity-server-notice" id="complexity-server-notice" style="display:none;">
+                            <div class="server-ai-badge">
+                                <span class="server-ai-icon">🤖</span>
+                                <span>Server AI Enabled</span>
+                                <span class="server-ai-tag">No token needed</span>
+                            </div>
+                        </div>
+                        <!-- Manual token input (shown only when server has NO token) -->
+                        <div id="complexity-manual-token" style="display:none;">
+                            <div class="complexity-config-row">
+                                <input
+                                    type="password"
+                                    class="complexity-token-input"
+                                    id="hf-token-input"
+                                    placeholder="hf_xxxxxxxx  (HuggingFace token)"
+                                    autocomplete="off"
+                                />
+                            </div>
+                            <div class="complexity-token-hint">
+                                Free token at <a href="https://huggingface.co/settings/tokens" target="_blank">huggingface.co/settings/tokens</a>
+                                — token stays only in your browser
+                            </div>
+                        </div>
+                        <div class="complexity-config-row" style="margin-top:8px;">
+                            <select class="complexity-model-select" id="hf-model-select">
+                                <option value="Qwen/Qwen2.5-Coder-7B-Instruct">Qwen2.5-Coder ⚡</option>
+                                <option value="deepseek-ai/DeepSeek-R1-Distill-Qwen-7B">DeepSeek-R1 🧠</option>
+                                <option value="meta-llama/Llama-3.1-8B-Instruct">Llama-3.1 🦙</option>
+                                <option value="microsoft/Phi-3.5-mini-instruct">Phi-3.5-mini 🔹</option>
+                            </select>
+                            <button class="complexity-analyze-btn" id="complexity-analyze-btn" onclick="analyzeComplexity()">
+                                ⚡ Analyze Complexity
+                            </button>
+                        </div>
+                        <div id="complexity-results" style="margin-top:10px;"></div>
+                    </div>
+                </div>
+                <!-- ===== END COMPLEXITY ANALYZER ===== -->
+
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/timer.js"></script>
+    <script src="/static/js/anti-cheat.js"></script>
+    <script src="/static/js/editor.js"></script>
+    <script>
+        function toggleLangDropdown() {
+            document.getElementById('lang-custom-dropdown').classList.toggle('open');
+        }
+        function closeLangDropdown() {
+            setTimeout(() => {
+                const dd = document.getElementById('lang-custom-dropdown');
+                if (dd) dd.classList.remove('open');
+            }, 150);
+        }
+        function selectLanguageUI(val, icon, text, el) {
+            document.getElementById('lang-selected-icon').textContent = icon;
+            document.getElementById('lang-selected-text').textContent = text;
+            document.getElementById('lang-select').value = val;
+
+            document.querySelectorAll('.dropdown-option').forEach(opt => opt.classList.remove('active'));
+            el.classList.add('active');
+
+            document.getElementById('lang-custom-dropdown').classList.remove('open');
+            if (window.changeLanguage) window.changeLanguage(val);
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,119 @@
+/* ===== STUDENT DASHBOARD ===== */
+.student-layout {
+    padding-top: 80px;
+    min-height: 100vh;
+}
+
+.student-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px;
+}
+
+.student-welcome {
+    margin-bottom: 32px;
+    padding: 28px 32px;
+    background: var(--gradient-card);
+    border: 1px solid var(--border-glow);
+    border-radius: var(--radius-xl);
+}
+
+.student-welcome h2 {
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    letter-spacing: 0.08em;
+}
+
+.student-welcome p {
+    color: var(--text-secondary);
+    margin-top: 6px;
+}
+
+.test-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.test-card {
+    padding: 24px;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    background: var(--bg-card);
+    border: 1px solid var(--border-glow);
+    backdrop-filter: blur(12px);
+    transition: var(--transition);
+}
+
+.test-card:hover {
+    border-color: var(--neon-blue);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-neon-blue);
+}
+
+.test-card-title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    margin-bottom: 10px;
+}
+
+.test-card-meta {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.test-card-footer {
+    margin-top: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* Completed test card state */
+.test-card.completed-card {
+    border-color: rgba(139, 92, 246, 0.4);
+    background: rgba(139, 92, 246, 0.05);
+}
+
+.test-card.completed-card:hover {
+    border-color: rgba(139, 92, 246, 0.7);
+    box-shadow: 0 4px 24px rgba(139, 92, 246, 0.15);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .student-container {
+        padding: 20px 16px;
+    }
+
+    .student-welcome {
+        padding: 20px;
+    }
+
+    .student-welcome h2 {
+        font-size: 1.1rem;
+    }
+
+    .test-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .topbar {
+        padding: 0 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .student-container {
+        padding: 12px;
+    }
+
+    .student-welcome h2 {
+        font-size: 1rem;
+    }
+}

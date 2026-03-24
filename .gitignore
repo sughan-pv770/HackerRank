@@ -1,0 +1,18 @@
+node_modules/
+.env
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+.idea/
+.vscode/
+*.log
+*.sqlite3
+c l o u d f l a r e d . e x e  
+
+deployment.zip
+runtimes/
+download_runtimes.py
+create_zip.py

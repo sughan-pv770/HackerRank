@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Codex Test — Defy Gravity. Master Code.</title>
+  <meta name="description"
+    content="Codex Test: The futuristic, secure student coding test platform with advanced anti-cheating.">
+  <link rel="stylesheet" href="/static/css/global.css">
+  <link rel="stylesheet" href="/static/css/landing.css">
+</head>
+
+<body>
+  <!-- Background layers -->
+  <div class="bg-canvas"></div>
+  <div class="grid-overlay"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="stars" id="stars"></div>
+
+  <!-- Nav -->
+  <nav class="nav-landing" id="navbar">
+    <span class="topbar-brand">CODEX TEST</span>
+    <div style="display:flex;gap:12px;">
+      <a href="/login" class="btn btn-outline btn-sm">Login</a>
+      <a href="/register" class="btn btn-primary btn-sm">Register</a>
+    </div>
+  </nav>
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-badge">
+        <div class="hero-badge-dot"></div>
+        Futuristic Exam Platform &nbsp;·&nbsp; Anti-Cheat Powered
+      </div>
+      <h1 class="hero-title">CODEX TEST</h1>
+      <p class="hero-tagline">Defy Gravity. <span>Master Code.</span></p>
+      <div class="hero-cta">
+        <a href="/register" class="btn btn-primary btn-lg">🚀 Get Started</a>
+        <a href="/login" class="btn btn-outline btn-lg">→ Sign In</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features">
+    <h2 class="features-title">Why Codex Test?</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🛡️</div>
+        <h3>Advanced Anti-Cheat</h3>
+        <p>Tab-switch detection, fullscreen enforcement, 3-strike auto-submit, and real-time activity logging keep your
+          exams secure.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>Multi-Language Sandbox</h3>
+        <p>Run code in Python, Java, JavaScript, C, and C++ in an isolated sandbox with per-test-case evaluation.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎯</div>
+        <h3>Smart Test Builder</h3>
+        <p>Admins can craft problems with visible and hidden test cases, set timers, and assign exams with start/end
+          windows.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Live Analytics</h3>
+        <p>Track pass/fail rates, language trends, suspicious activity, and export results as CSV in real-time.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🌌</div>
+        <h3>Futuristic UI</h3>
+        <p>Monaco Editor, glassmorphism cards, neon animations—an interface students actually enjoy using.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔐</div>
+        <h3>Secure by Design</h3>
+        <p>JWT authentication, bcrypt hashing, role-based access control, and HTTP security headers baked in.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="landing-footer">
+    <p>© 2026 Codex Test &nbsp;·&nbsp; Built with 🚀 &nbsp;·&nbsp; Defy Gravity. Master Code.</p>
+  </footer>
+
+  <script>
+    // Generate stars
+    const starsEl = document.getElementById('stars');
+    for (let i = 0; i < 80; i++) {
+      const s = document.createElement('div');
+      s.className = 'star';
+      s.style.cssText = `left:${Math.random() * 100}%;top:${Math.random() * 100}%;opacity:${Math.random() * 0.6 + 0.1};animation-delay:${Math.random() * 4}s;animation-duration:${2 + Math.random() * 4}s;width:${Math.random() < 0.8 ? 2 : 3}px;height:${Math.random() < 0.8 ? 2 : 3}px;`;
+      starsEl.appendChild(s);
+    }
+    // Navbar scroll effect
+    const nav = document.getElementById('navbar');
+    window.addEventListener('scroll', () => nav.classList.toggle('scrolled', window.scrollY > 40));
+  </script>
+</body>
+
+</html>
