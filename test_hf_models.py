@@ -9,7 +9,6 @@ MODELS = [
     "Qwen/Qwen2.5-Coder-7B-Instruct",
     "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
     "meta-llama/Llama-3.1-8B-Instruct",
-    "microsoft/Phi-3.5-mini-instruct",
     "Qwen/Qwen2.5-Coder-32B-Instruct",
     "Qwen/Qwen2.5-72B-Instruct",
     "mistralai/Mistral-7B-Instruct-v0.3",

@@ -13,7 +13,6 @@ SUPPORTED_MODELS = {
     "Qwen/Qwen2.5-Coder-7B-Instruct",
     "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
     "meta-llama/Llama-3.1-8B-Instruct",
-    "microsoft/Phi-3.5-mini-instruct",
 }
 
 ANALYSIS_PROMPT = """You are an expert algorithm and data structures analyst. Analyze the given code and respond ONLY with a valid JSON object. No markdown, no backticks, no explanation outside the JSON.

@@ -149,7 +149,6 @@
             language: 'python',
             theme: 'vs-dark',
             fontSize: 14,
-            fontFamily: "'Fira Code', monospace",
             minimap: { enabled: false },
             wordWrap: 'on',
             automaticLayout: true,
