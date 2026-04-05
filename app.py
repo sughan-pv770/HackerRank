@@ -49,6 +49,7 @@ def create_app():
     from routes.student import student_bp
     from routes.activity import activity_bp
     from routes.complexity import complexity_bp
+    from routes.ai_helper import ai_bp
 
     app.register_blueprint(auth_bp,        url_prefix="/api/auth")
     app.register_blueprint(problems_bp,    url_prefix="/api/problems")
@@ -58,6 +59,7 @@ def create_app():
     app.register_blueprint(student_bp,     url_prefix="/api/student")
     app.register_blueprint(activity_bp,    url_prefix="/api/activity")
     app.register_blueprint(complexity_bp,  url_prefix="/api/complexity")
+    app.register_blueprint(ai_bp,          url_prefix="/api/ai")
 
     # Serve frontend pages
     @app.route("/")

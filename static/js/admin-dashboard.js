@@ -620,6 +620,7 @@
             if (em) em.style.display = 'none';
             const tam = document.getElementById('test-analytics-modal');
             if (tam) tam.style.display = 'none';
+            if (_aiChatOpen) toggleAiChat();
             closeSidebar();
         }
     });
@@ -843,6 +844,189 @@
 
         } catch (e) { showToast(e.message, 'error'); }
     }
+
+    // ══════════════════════════════════════════════════
+    // AI CHATBOT
+    // ══════════════════════════════════════════════════
+    let _aiChatOpen = false;
+    let _aiGenerating = false;
+    let _lastGeneratedProblem = null;
+
+    window.toggleAiChat = () => {
+        _aiChatOpen = !_aiChatOpen;
+        const panel = document.getElementById('ai-chat-panel');
+        const fab = document.getElementById('ai-chat-fab');
+        if (_aiChatOpen) {
+            panel.style.display = 'flex';
+            fab.innerHTML = `
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                <span class="ai-fab-pulse"></span>`;
+            document.getElementById('ai-chat-input').focus();
+        } else {
+            panel.style.display = 'none';
+            fab.innerHTML = `
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2a4 4 0 0 1 4 4v1a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/>
+                    <path d="M6 10a2 2 0 0 0-2 2v1a2 2 0 0 0 2 2"/>
+                    <path d="M18 10a2 2 0 0 1 2 2v1a2 2 0 0 1-2 2"/>
+                    <path d="M9 18h6"/>
+                    <path d="M10 22h4"/>
+                    <path d="M12 18v4"/>
+                </svg>
+                <span class="ai-fab-pulse"></span>`;
+        }
+    };
+
+    window.sendAiSuggestion = (btn) => {
+        const text = btn.textContent.trim();
+        document.getElementById('ai-chat-input').value = text;
+        sendAiMessage();
+    };
+
+    function appendAiMessage(role, html) {
+        const container = document.getElementById('ai-chat-messages');
+        const avatar = role === 'bot' ? '🤖' : '👤';
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `ai-msg ai-msg-${role}`;
+        msgDiv.innerHTML = `
+            <div class="ai-msg-avatar">${avatar}</div>
+            <div class="ai-msg-bubble">${html}</div>`;
+        container.appendChild(msgDiv);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function showTypingIndicator() {
+        const container = document.getElementById('ai-chat-messages');
+        const typing = document.createElement('div');
+        typing.className = 'ai-msg ai-msg-bot';
+        typing.id = 'ai-typing-msg';
+        typing.innerHTML = `
+            <div class="ai-msg-avatar">🤖</div>
+            <div class="ai-msg-bubble">
+                <div class="ai-typing">
+                    <div class="ai-typing-dot"></div>
+                    <div class="ai-typing-dot"></div>
+                    <div class="ai-typing-dot"></div>
+                </div>
+                <div style="font-size:.72rem;color:var(--text-muted);margin-top:4px;">Generating problem with AI…</div>
+            </div>`;
+        container.appendChild(typing);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+        const el = document.getElementById('ai-typing-msg');
+        if (el) el.remove();
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function renderProblemCard(problem) {
+        const desc = (problem.description || '').substring(0, 300);
+        const sampleCount = (problem.sampleTestCases || []).length;
+        const hiddenCount = (problem.hiddenTestCases || []).length;
+
+        // Build sample test cases preview
+        let samplesHtml = '';
+        (problem.sampleTestCases || []).forEach((tc, i) => {
+            samplesHtml += `
+                <div style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:.74rem;">
+                    <div style="color:var(--neon-blue);font-weight:600;margin-bottom:3px;">Sample ${i + 1}</div>
+                    <div style="display:flex;gap:12px;">
+                        <div style="flex:1;"><span style="color:var(--text-muted);">Input:</span> <code style="color:var(--neon-green);font-family:var(--font-code);">${escapeHtml(tc.input || '')}</code></div>
+                        <div style="flex:1;"><span style="color:var(--text-muted);">Output:</span> <code style="color:#f59e0b;font-family:var(--font-code);">${escapeHtml(tc.output || '')}</code></div>
+                    </div>
+                </div>`;
+        });
+
+        return `
+            <div class="ai-problem-card">
+                <div class="ai-problem-card-title">📝 ${escapeHtml(problem.title || 'Untitled')}</div>
+                <div class="ai-problem-card-desc">${escapeHtml(desc)}${desc.length < (problem.description || '').length ? '…' : ''}</div>
+                <div class="ai-problem-card-meta">
+                    <span class="badge badge-info" style="font-size:.65rem;">✓ ${sampleCount} sample cases</span>
+                    <span class="badge badge-warn" style="font-size:.65rem;">🔒 ${hiddenCount} hidden cases</span>
+                </div>
+                ${samplesHtml}
+                <div class="ai-problem-card-actions">
+                    <button class="btn btn-primary btn-sm" onclick="useAiProblem()" style="font-size:.7rem;">✅ Use This Problem</button>
+                    <button class="btn btn-outline btn-sm" onclick="regenerateAiProblem()" style="font-size:.7rem;">🔄 Generate Another</button>
+                </div>
+            </div>`;
+    }
+
+    window.sendAiMessage = async () => {
+        if (_aiGenerating) return;
+        const input = document.getElementById('ai-chat-input');
+        const text = input.value.trim();
+        if (!text) return;
+
+        input.value = '';
+        appendAiMessage('user', `<p>${escapeHtml(text)}</p>`);
+
+        _aiGenerating = true;
+        document.getElementById('ai-send-btn').disabled = true;
+        showTypingIndicator();
+
+        try {
+            const resp = await API.post('/api/ai/generate-problem', { prompt: text });
+            removeTypingIndicator();
+
+            if (resp.success && resp.problem) {
+                _lastGeneratedProblem = resp.problem;
+                const cardHtml = renderProblemCard(resp.problem);
+                appendAiMessage('bot', `<p style="margin-bottom:8px;">Here's a problem based on your request:</p>${cardHtml}`);
+            } else {
+                appendAiMessage('bot', `<p style="color:#f87171;">⚠️ ${escapeHtml(resp.error || 'Failed to generate problem. Please try again.')}</p>
+                    ${resp.raw ? `<details style="margin-top:8px;font-size:.75rem;color:var(--text-muted);"><summary>Raw response</summary><pre style="white-space:pre-wrap;max-height:150px;overflow:auto;margin-top:6px;font-family:var(--font-code);font-size:.72rem;">${escapeHtml(resp.raw || '')}</pre></details>` : ''}`);
+            }
+        } catch (err) {
+            removeTypingIndicator();
+            appendAiMessage('bot', `<p style="color:#f87171;">❌ Error: ${escapeHtml(err.message || 'Connection failed')}</p>
+                <p style="font-size:.78rem;color:var(--text-muted);margin-top:6px;">Please check your connection and try again.</p>`);
+        } finally {
+            _aiGenerating = false;
+            document.getElementById('ai-send-btn').disabled = false;
+        }
+    };
+
+    window.useAiProblem = () => {
+        if (!_lastGeneratedProblem) return;
+        const p = _lastGeneratedProblem;
+
+        // Switch to Problems section
+        showSection('problems', document.querySelector('[data-section=problems]'));
+
+        // Open problem modal and fill fields
+        currentEditProblemId = null;
+        document.getElementById('problem-modal-title').textContent = 'ADD PROBLEM';
+        document.getElementById('pm-title').value = p.title || '';
+        document.getElementById('pm-desc').value = p.description || '';
+        document.getElementById('pm-sample').value = JSON.stringify(p.sampleTestCases || [], null, 2);
+        document.getElementById('pm-hidden').value = JSON.stringify(p.hiddenTestCases || [], null, 2);
+        document.getElementById('problem-modal').style.display = 'flex';
+
+        // Close chat panel
+        toggleAiChat();
+
+        showToast('Problem loaded into form! Review and save.', 'success');
+    };
+
+    window.regenerateAiProblem = () => {
+        const input = document.getElementById('ai-chat-input');
+        input.focus();
+        appendAiMessage('bot', `<p style="font-size:.82rem;color:var(--text-secondary);">Sure! Describe the problem you'd like, or try one of these:</p>
+            <div class="ai-suggestions">
+                <button class="ai-suggestion-chip" onclick="sendAiSuggestion(this)">Easy string manipulation</button>
+                <button class="ai-suggestion-chip" onclick="sendAiSuggestion(this)">Medium graph problem</button>
+                <button class="ai-suggestion-chip" onclick="sendAiSuggestion(this)">Hard tree traversal</button>
+            </div>`);
+    };
 
     // ────────────────────────────────────────────────
     // Initial load
