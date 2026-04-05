@@ -116,16 +116,26 @@ def _call_model(model_id, user_prompt):
         "max_tokens": 4096,
     }
 
-    resp = req.post(NVIDIA_BASE_URL, headers=headers, json=payload, timeout=120)
+    try:
+        resp = req.post(NVIDIA_BASE_URL, headers=headers, json=payload, timeout=120)
+    except req.exceptions.Timeout:
+        raise RuntimeError("Request timed out after 120s")
+    except req.exceptions.ConnectionError as e:
+        raise RuntimeError(f"Connection failed: {str(e)[:100]}")
 
-    if resp.status_code == 401 or resp.status_code == 403:
-        raise PermissionError(f"NVIDIA API auth failed ({resp.status_code}): {resp.text[:200]}")
+    raw_text = resp.text[:500]
+
+    if resp.status_code in (401, 403):
+        raise PermissionError(f"Auth failed {resp.status_code}: {raw_text}")
 
     if resp.status_code != 200:
-        raise RuntimeError(f"NVIDIA API error {resp.status_code}: {resp.text[:300]}")
+        raise RuntimeError(f"NVIDIA API {resp.status_code}: {raw_text}")
 
-    data = resp.json()
-    return data["choices"][0]["message"]["content"].strip()
+    try:
+        data = resp.json()
+        return data["choices"][0]["message"]["content"].strip()
+    except (KeyError, IndexError, json.JSONDecodeError) as e:
+        raise RuntimeError(f"Bad response format: {str(e)} | body: {raw_text}")
 
 
 @ai_bp.route("/generate-problem", methods=["POST"])
