@@ -15,7 +15,7 @@ ai_bp = Blueprint("ai_helper", __name__)
 # ── NVIDIA Config ──────────────────────────────────────────────
 # IMPORTANT: Set NVIDIA_API_KEY in Railway environment variables
 # Get your key from: https://build.nvidia.com → Profile → API Keys
-NVIDIA_API_KEY = os.getenv("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", "")
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "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")
 NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
 
 # Primary model — Nemotron-3-Super as requested
