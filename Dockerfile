@@ -24,5 +24,5 @@ COPY . .
 # We use a default of 5000 if PORT is not set
 EXPOSE 5000
 
-# Start Gunicorn
-CMD gunicorn --bind 0.0.0.0:${PORT:-5000} "app:create_app()"
+# Start Gunicorn with a 180s timeout to prevent 502s when waiting for AI API
+CMD gunicorn --timeout 180 --bind 0.0.0.0:${PORT:-5000} "app:create_app()"
