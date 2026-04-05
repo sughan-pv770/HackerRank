@@ -18,6 +18,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application code
 COPY . .
 
+
+
 # Expose port (Render sets the PORT environment variable, defaulting to 10000)
 # We use a default of 5000 if PORT is not set
 EXPOSE 5000

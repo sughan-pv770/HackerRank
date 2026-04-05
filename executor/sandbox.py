@@ -15,12 +15,20 @@ IS_WINDOWS = platform.system() == "Windows"
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RUNTIMES_DIR = os.path.join(BASE_DIR, "runtimes")
 
-PYTHON_PATH = os.path.join(RUNTIMES_DIR, "python", "python.exe" if IS_WINDOWS else "python")
-NODEJS_PATH = os.path.join(RUNTIMES_DIR, "nodejs", "node-v20.11.1-win-x64", "node.exe" if IS_WINDOWS else "node")
-JAVA_PATH = os.path.join(RUNTIMES_DIR, "java", "jdk-21.0.2", "bin", "java.exe" if IS_WINDOWS else "java")
-JAVAC_PATH = os.path.join(RUNTIMES_DIR, "java", "jdk-21.0.2", "bin", "javac.exe" if IS_WINDOWS else "javac")
-GCC_PATH = os.path.join(RUNTIMES_DIR, "mingw", "w64devkit", "bin", "gcc.exe" if IS_WINDOWS else "gcc")
-GPP_PATH = os.path.join(RUNTIMES_DIR, "mingw", "w64devkit", "bin", "g++.exe" if IS_WINDOWS else "g++")
+if IS_WINDOWS:
+    PYTHON_PATH = os.path.join(RUNTIMES_DIR, "python", "python.exe")
+    NODEJS_PATH = os.path.join(RUNTIMES_DIR, "nodejs", "node-v20.11.1-win-x64", "node.exe")
+    JAVA_PATH = os.path.join(RUNTIMES_DIR, "java", "jdk-21.0.2", "bin", "java.exe")
+    JAVAC_PATH = os.path.join(RUNTIMES_DIR, "java", "jdk-21.0.2", "bin", "javac.exe")
+    GCC_PATH = os.path.join(RUNTIMES_DIR, "mingw", "w64devkit", "bin", "gcc.exe")
+    GPP_PATH = os.path.join(RUNTIMES_DIR, "mingw", "w64devkit", "bin", "g++.exe")
+else:
+    PYTHON_PATH = "python"
+    NODEJS_PATH = "node"
+    JAVA_PATH = "java"
+    JAVAC_PATH = "javac"
+    GCC_PATH = "gcc"
+    GPP_PATH = "g++"
 
 LANG_CONFIG = {
     "python": {
