@@ -1,21 +1,32 @@
 """
-AI Problem Generator — uses NVIDIA Nemotron model to generate
-LeetCode-style coding problems with test cases for the admin dashboard.
+AI Problem Generator — uses NVIDIA Nemotron-3-Super-120b-a12b model
+to generate LeetCode-style coding problems for the admin dashboard.
+
+Uses the OpenAI-compatible SDK as recommended by NVIDIA.
 """
 import json
 import os
-import requests
+import re
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt
 
 ai_bp = Blueprint("ai_helper", __name__)
 
+# ── NVIDIA Config ──────────────────────────────────────────────
 NVIDIA_API_KEY = os.getenv(
     "NVIDIA_API_KEY",
     "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"
 )
-NVIDIA_API_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
-MODEL_ID = "nvidia/nemotron-3-super-120b-a12b"
+NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
+
+# Primary model — Nemotron-3-Super as requested
+PRIMARY_MODEL = "nvidia/nemotron-3-super-120b-a12b"
+
+# Fallback models in case primary is unavailable (tried in order)
+FALLBACK_MODELS = [
+    "meta/llama-3.3-70b-instruct",
+    "meta/llama-3.1-70b-instruct",
+]
 
 
 def _require_master():
@@ -34,36 +45,79 @@ When the user asks for a coding problem (e.g. "I need a medium level matrix prob
 
 Your response MUST be a valid JSON object with exactly these keys:
 {
-  "title": "<Problem Title — inspired by a real LeetCode problem>",
-  "description": "<Full problem statement including:\\n- Clear problem description\\n- Input format (what the program reads from stdin)\\n- Output format (what the program prints to stdout)\\n- Constraints\\n- Examples section with explanation\\n- Notes if needed.\\nUse newline characters for formatting.>",
+  "title": "<Problem Title>",
+  "description": "<Full problem statement with input/output format, constraints, and examples>",
   "sampleTestCases": [
-    {"input": "<stdin input>", "output": "<expected stdout>"},
-    {"input": "<stdin input>", "output": "<expected stdout>"}
+    {"input": "<stdin input string>", "output": "<expected stdout string>"},
+    {"input": "<stdin input string>", "output": "<expected stdout string>"}
   ],
   "hiddenTestCases": [
-    {"input": "<stdin input>", "output": "<expected stdout>"},
-    {"input": "<stdin input>", "output": "<expected stdout>"},
-    {"input": "<stdin input>", "output": "<expected stdout>"},
-    {"input": "<stdin input>", "output": "<expected stdout>"},
-    {"input": "<stdin input>", "output": "<expected stdout>"}
+    {"input": "<stdin input string>", "output": "<expected stdout string>"},
+    {"input": "<stdin input string>", "output": "<expected stdout string>"},
+    {"input": "<stdin input string>", "output": "<expected stdout string>"},
+    {"input": "<stdin input string>", "output": "<expected stdout string>"},
+    {"input": "<stdin input string>", "output": "<expected stdout string>"}
   ]
 }
 
-RULES:
-1. Provide EXACTLY 2 sample test cases and EXACTLY 5 hidden test cases — no more, no less.
-2. Every test case must be UNIQUE — no duplicate inputs across sample and hidden cases.
-3. Hidden test cases MUST include: a minimal edge case, a boundary/corner case, a medium-sized input, and at least one large input to stress-test solutions.
-4. All input/output values MUST be strings representing what a program reads from stdin and prints to stdout.
-   - For arrays: "5\\n1 2 3 4 5\\n" (first line = size, second line = elements)
-   - For matrices: "3 3\\n1 2 3\\n4 5 6\\n7 8 9\\n" (first line = rows cols)
-   - For single values: "42\\n"
-   - IMPORTANT: Each input/output MUST end with a newline character \\n
-5. The description must be detailed enough for a student to solve without seeing hidden test cases.
-6. Ensure ALL test cases have correct, verified outputs consistent with the problem statement.
-7. Reply ONLY with the JSON object — no extra text, no markdown fences, no explanation.
-8. The problem should be inspired by a real LeetCode problem matching the requested difficulty and topic.
-9. If the user mentions a specific LeetCode problem or number, model the problem closely after it.
+STRICT RULES:
+1. Provide EXACTLY 2 sample test cases and EXACTLY 5 hidden test cases.
+2. Every test case must be UNIQUE — no duplicate inputs.
+3. Hidden test cases must include: edge case, boundary case, medium input, large stress-test input.
+4. Input/output must be stdin/stdout strings — e.g. "5\\n1 2 3 4 5\\n" for an array of 5 elements.
+5. Each input and output string MUST end with a newline \\n character.
+6. All test case outputs must be mathematically verified and correct.
+7. Reply ONLY with the raw JSON object — no markdown fences, no explanation text.
 """
+
+
+def _call_nvidia(model_id, user_prompt):
+    """Call NVIDIA API using the OpenAI-compatible SDK."""
+    from openai import OpenAI
+
+    client = OpenAI(
+        base_url=NVIDIA_BASE_URL,
+        api_key=NVIDIA_API_KEY,
+    )
+
+    completion = client.chat.completions.create(
+        model=model_id,
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_prompt},
+        ],
+        temperature=0.7,
+        max_tokens=4096,
+        timeout=120,
+    )
+    return completion.choices[0].message.content.strip()
+
+
+def _extract_json(content):
+    """Extract JSON from model response, handling markdown fences."""
+    # Strip markdown fences if present
+    content = content.strip()
+    if content.startswith("```"):
+        lines = content.split("\n")
+        # Remove first line (```json or ```)
+        lines = lines[1:]
+        # Remove last ``` if present
+        if lines and lines[-1].strip() == "```":
+            lines = lines[:-1]
+        content = "\n".join(lines).strip()
+
+    # Try direct parse first
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        pass
+
+    # Try to extract JSON object using regex
+    match = re.search(r'\{[\s\S]*\}', content)
+    if match:
+        return json.loads(match.group())
+
+    raise json.JSONDecodeError("No valid JSON found", content, 0)
 
 
 @ai_bp.route("/generate-problem", methods=["POST"])
@@ -79,73 +133,76 @@ def generate_problem():
     if not user_prompt:
         return jsonify({"error": "Please describe what kind of problem you want."}), 400
 
-    if not NVIDIA_API_KEY:
-        return jsonify({"error": "NVIDIA API key not configured on server."}), 500
+    if not NVIDIA_API_KEY or not NVIDIA_API_KEY.startswith("nvapi-"):
+        return jsonify({"error": "Invalid NVIDIA API key. Must start with nvapi-"}), 500
+
+    # Try primary model first, then fallbacks
+    models_to_try = [PRIMARY_MODEL] + FALLBACK_MODELS
+    last_error = None
+
+    for model_id in models_to_try:
+        try:
+            content = _call_nvidia(model_id, user_prompt)
+            problem = _extract_json(content)
+
+            # Validate required keys
+            required = ["title", "description", "sampleTestCases", "hiddenTestCases"]
+            missing = [k for k in required if k not in problem]
+            if missing:
+                last_error = f"AI response missing fields: {missing}"
+                continue
+
+            return jsonify({
+                "success": True,
+                "problem": problem,
+                "model_used": model_id
+            }), 200
+
+        except json.JSONDecodeError as e:
+            last_error = f"Model {model_id} returned invalid JSON: {str(e)}"
+            continue
+        except Exception as e:
+            err_str = str(e)
+            last_error = f"Model {model_id} error: {err_str}"
+            # If it's a 403 auth error, don't try fallbacks with different model
+            if "403" in err_str or "401" in err_str:
+                return jsonify({
+                    "error": "NVIDIA API authentication failed (403). Please check your API key in Railway variables.",
+                    "detail": err_str[:300]
+                }), 502
+            continue
+
+    return jsonify({
+        "error": f"All models failed. Last error: {last_error}",
+    }), 502
+
+
+@ai_bp.route("/test-key", methods=["GET"])
+@jwt_required()
+def test_key():
+    """Test endpoint to verify NVIDIA API key is working."""
+    err = _require_master()
+    if err:
+        return err
 
     try:
-        resp = requests.post(
-            NVIDIA_API_URL,
-            headers={
-                "Authorization": f"Bearer {NVIDIA_API_KEY}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": MODEL_ID,
-                "messages": [
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": user_prompt},
-                ],
-                "temperature": 0.7,
-                "max_tokens": 4096,
-            },
-            timeout=120,
+        from openai import OpenAI
+        client = OpenAI(base_url=NVIDIA_BASE_URL, api_key=NVIDIA_API_KEY)
+        result = client.chat.completions.create(
+            model=PRIMARY_MODEL,
+            messages=[{"role": "user", "content": "Reply with just: OK"}],
+            max_tokens=5,
+            timeout=30,
         )
-
-        if resp.status_code != 200:
-            error_detail = resp.text[:500]
-            return jsonify({
-                "error": f"NVIDIA API returned {resp.status_code}",
-                "detail": error_detail
-            }), 502
-
-        data = resp.json()
-        content = data["choices"][0]["message"]["content"].strip()
-
-        # Strip markdown code fences if the model wraps output
-        if content.startswith("```"):
-            # Remove ```json and trailing ```
-            lines = content.split("\n")
-            if lines[0].startswith("```"):
-                lines = lines[1:]
-            if lines and lines[-1].strip() == "```":
-                lines = lines[:-1]
-            content = "\n".join(lines)
-
-        # Parse and validate JSON
-        problem = json.loads(content)
-
-        # Validate required keys
-        required = ["title", "description", "sampleTestCases", "hiddenTestCases"]
-        for key in required:
-            if key not in problem:
-                return jsonify({
-                    "error": f"AI response missing required field: {key}",
-                    "raw": content[:1000]
-                }), 502
-
         return jsonify({
             "success": True,
-            "problem": problem
-        }), 200
-
-    except json.JSONDecodeError:
-        return jsonify({
-            "error": "AI returned invalid JSON. Please try again.",
-            "raw": content[:1000] if 'content' in dir() else ""
-        }), 502
-    except requests.exceptions.Timeout:
-        return jsonify({"error": "AI request timed out. Please try again."}), 504
-    except requests.exceptions.ConnectionError:
-        return jsonify({"error": "Could not connect to NVIDIA API."}), 502
+            "model": PRIMARY_MODEL,
+            "response": result.choices[0].message.content,
+            "key_prefix": NVIDIA_API_KEY[:12] + "..."
+        })
     except Exception as e:
-        return jsonify({"error": f"Unexpected error: {str(e)}"}), 500
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "key_prefix": NVIDIA_API_KEY[:12] + "..." if NVIDIA_API_KEY else "NOT SET"
+        }), 502
